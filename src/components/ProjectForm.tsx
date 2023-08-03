@@ -6,39 +6,97 @@ import FormField from "./FormField";
 import { categoryFilters } from "@/constants";
 import CustomMenu from "./CustomMenu";
 import { useState } from "react";
+import Button from "./Button";
+import { createNewProject, editProject, fetchToken } from "../../lib/actions";
+import { useRouter } from "next/navigation";
+import { ProjectInterface } from "../../common.types";
 
 type Props = {
     type: string;
     session: SessionInterface;
+    project?: ProjectInterface;
 }
-const ProjectForm = ({type, session}: Props) => {
+const ProjectForm = ({type, session, project}: Props) => {
 
-    const handleformSubmit = (e: React.FormEvent) => {
+    const router = useRouter();
 
+    const handleformSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        setIsSubmitting(true);
+
+        //getting the token
+        const { token } = await fetchToken();
+        
+        try {
+            //creating a new project
+            if (type === 'create') {
+                await createNewProject(form, session?.user?.id, token);
+
+                router.push('/');
+            }
+            
+            if (type === 'edit') {
+                //editing an existing project
+                await editProject(form, project?.id as string, token);
+                
+                router.push('/');
+            }
+        } catch (error) {
+            console.log(error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    
     }
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        e.preventDefault();
+
+        const file = e.target.files?.[0]//select the first file from the array of files
+
+        if (!file) return; //if no file is selected, return
+
+        if(!file.type.includes('image')) {
+            return alert('Please select an image file');
+        } //if file is not an image, return
+
+        const reader = new FileReader(); //create a new file reader
+
+        reader.readAsDataURL(file); //read the file as a data url
+
+        reader.onload = () => {
+            const result = reader.result as string; //get the result, which is a base64 encoded string
+
+            handleStateChange('image', result);
+        }
 
     }
 
-    const [isSubmitting, setisSubmitting] = useState(false);
-    const [form, setForm] = useState({
-        title: '',
-        description: '',
-        image: '',
-        category: '',
-        liveSiteUrl: '',
-        githubUrl: '',
-    })
-
+    
     const handleStateChange = (fieldName: string, value: string) => {
-        setForm(prevState) => 
-        ({...prevState, [fieldName]: value})
+        setForm((prevState) => 
+        ({...prevState, [fieldName]: value}))
     }
+    
+
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [form, setForm] = useState({
+        title: project?.title ||  '',
+        description: project?.description ||  '',
+        image: project?.image ||  '',
+        category: project?.category ||  '',
+        liveSiteUrl: project?.liveSiteUrl ||  '',
+        githubUrl: project?.githubUrl ||  '',
+    });
+
 
 
     return (
-        <form onSubmit={handleformSubmit} className="flexStart form">
+        <form 
+            onSubmit={handleformSubmit} 
+            className="flexStart form"
+        >
             <div className="flexStart form_image-container">
                 <label htmlFor="poster" className="flexCenter form_image-label">
                     {!form.image && 'Choose a poster for your project'}
@@ -68,8 +126,8 @@ const ProjectForm = ({type, session}: Props) => {
                 setState = {(value) => handleStateChange('title', value)}
             />
             <FormField 
-                type = "Title"
-                title = "text"
+                type = "text"
+                title = "Description"
                 state = {form.description} 
                 placeholder = "Showcase and discover remarkable developer projects"
                 setState = {(value) => handleStateChange('description', value)}
@@ -90,16 +148,27 @@ const ProjectForm = ({type, session}: Props) => {
             />
 
             <CustomMenu 
-                type = "select"
                 title = "Category"
                 state = {form.category}
                 filters = {categoryFilters}
-                placeholder = "Select a category"
                 setState = {(value) => handleStateChange('category', value)}
             />
 
             <div className="flexStart w-full">
-                <button>Create</button>
+                <Button 
+                    title = {
+                        isSubmitting 
+                        ? `${type === 'create' 
+                            ? 'Creating' : 'Updating'} project...` 
+                        : `${type === 'create' 
+                            ? 'Create' : 'Update'} project`
+                    }
+                    type = 'submit'
+                    leftIcon = {isSubmitting ?
+                    "" : '/plus.svg'}
+                    isSubmitting = 
+                    {isSubmitting}
+                />
             </div>
         </form>
     )

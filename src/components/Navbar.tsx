@@ -5,6 +5,7 @@ import { NavLinks } from '@/constants'
 import AuthProviders from '@/components/AuthProvides'
 import { getCurrentUser } from '../../lib/session'
 import ProfileMenu from '@/components/ProfileMenu'
+import Button from '@/components/Button'
 
 //In NEXT JS you can even make components an async function🔥 
 const Navbar = async () => {
@@ -35,7 +36,9 @@ const Navbar = async () => {
                         <ProfileMenu session={session} />
 
                         <Link href='/create-project'>
-                            Share Work
+                        <Button  
+                            title="Share Project"
+                        />
                         </Link>
                     </>
                 ) : (

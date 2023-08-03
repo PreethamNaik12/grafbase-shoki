@@ -1,6 +1,7 @@
 'use client';
 import { getProviders, signIn } from 'next-auth/react'
 import { useState, useEffect } from 'react'
+import Button from './Button';
 
 type Provider = {
   id: string;
@@ -30,11 +31,15 @@ const AuthProvides = () => {
   }, [])//setting dependeny array empty says that perform this after component loads
 
   if (providers) {
-    console.log(providers);
+    // console.log(providers);
     return (
       <div>
         {Object.values(providers).map((provider: Provider, i) => (
-          <button key={i} onClick= {()=> signIn()}>{provider.id}</button>
+          <Button 
+            key={i} 
+            handleClick= {()=> signIn()} 
+            title="Sign In"
+          />
         ))}
       </div>
     )
